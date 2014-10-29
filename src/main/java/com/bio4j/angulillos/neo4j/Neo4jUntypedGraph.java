@@ -15,6 +15,7 @@ import org.neo4j.graphdb.RelationshipType;
 
 import static org.neo4j.graphdb.Direction.*;
 
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.schema.ConstraintDefinition;
 import org.neo4j.graphdb.schema.ConstraintCreator;
 
@@ -35,11 +36,26 @@ public interface Neo4jUntypedGraph extends UntypedGraph <
   @Override
   default Relationship addEdge(Node from, RelationshipType edgeType, Node to) {
 
-    return from.createRelationshipTo(to, edgeType);
+    try ( Transaction tx = neo4jGraph().beginTx() ) {
+
+      Relationship rel = from.createRelationshipTo(to, edgeType); 
+      tx.success(); 
+
+      return rel;
+    }
   }
 
   @Override
-  default Node addVertex(Label type) {  return neo4jGraph().createNode(type);  }
+  default Node addVertex(Label type) {  
+
+    try ( Transaction tx = neo4jGraph().beginTx() ) {
+
+      Node node = neo4jGraph().createNode(type); 
+      tx.success(); 
+
+      return node;
+    }
+  }
 
   @Override
   default <V> V getPropertyV(Node vertex, String property) {  
@@ -52,7 +68,11 @@ public interface Neo4jUntypedGraph extends UntypedGraph <
   @Override
   default <V> void setPropertyV(Node vertex, String property, V value) {
 
-    vertex.setProperty( property, value ); 
+    try ( Transaction tx = neo4jGraph().beginTx() ) {
+
+      vertex.setProperty( property, value ); 
+      tx.success(); 
+    }
   }
 
   @Override
@@ -66,7 +86,12 @@ public interface Neo4jUntypedGraph extends UntypedGraph <
   @Override
   default <V> void setPropertyE(Relationship edge, String property, V value) {
 
-    edge.setProperty( property, value );
+    try ( Transaction tx = neo4jGraph().beginTx() ) {
+
+      edge.setProperty( property, value );
+      tx.success(); 
+    }
+    
   }
 
   @Override
