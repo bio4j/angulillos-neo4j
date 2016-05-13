@@ -20,7 +20,7 @@ implements
 
   public Neo4jUntypedGraph(GraphDatabaseService neo4jGraph) { this.neo4jGraph = neo4jGraph; }
 
-
+  // TODO drop all these methods after fixing inheritance in angulillos
   @Override
   public void commit() { throw new UnsupportedOperationException(); }
 
@@ -30,20 +30,27 @@ implements
   @Override
   public void rollback() { throw new UnsupportedOperationException(); }
 
-  private RelationshipType relType(AnyEdgeType edgeType) {
+  /* Convert an `AnyEdgeType` to Neo4j RelationshipType */
+  private static RelationshipType Neo4jRelType(AnyEdgeType edgeType) {
+
     return DynamicRelationshipType.withName(edgeType._label());
+  }
+
+  private static Label Neo4jLabel(AnyVertexType vertexType) {
+
+    return DynamicLabel.label( vertexType._label() );
   }
 
   @Override
   public Relationship addEdge(Node from, AnyEdgeType edgeType, Node to) {
 
-    return from.createRelationshipTo(to, relType(edgeType));
+    return from.createRelationshipTo(to, Neo4jRelType(edgeType));
   }
 
   @Override
   public Node addVertex(AnyVertexType vertexType) {
 
-    return neo4jGraph().createNode(DynamicLabel.label(vertexType._label()));
+    return neo4jGraph.createNode(Neo4jLabel(vertexType));
   }
 
 
@@ -91,31 +98,92 @@ implements
     return edge.getEndNode();
   }
 
+  /*
+    ### *out* methods
+
+  */
+
   @Override
   public Stream<Relationship> outE(Node vertex, AnyEdgeType edgeType) {
 
-    return stream( vertex.getRelationships(relType(edgeType), OUTGOING) );
+    return stream( vertex.getRelationships(Neo4jRelType(edgeType), OUTGOING) );
+  }
+
+  @Override
+  public Relationship outOneE(Node vertex, AnyEdgeType edgeType) {
+
+    return vertex.getSingleRelationship(Neo4jRelType(edgeType), OUTGOING);
+  }
+
+  @Override
+  public Optional<Relationship> outAtMostOneE(Node vertex, AnyEdgeType edgeType) {
+
+    return Optional.ofNullable(
+      outOneE(vertex, edgeType)
+    );
   }
 
   @Override
   public Stream<Node> outV(Node vertex, AnyEdgeType edgeType) {
 
     return stream(
-      vertex.getRelationships(relType(edgeType), OUTGOING)
+      vertex.getRelationships(Neo4jRelType(edgeType), OUTGOING)
     ).map( Relationship::getEndNode );
   }
 
   @Override
+  public Node outOneV(Node vertex, AnyEdgeType edgeType) {
+
+    return outOneE(vertex, edgeType).getEndNode();
+  }
+
+  @Override
+  public Optional<Node> outAtMostOneV(Node vertex, AnyEdgeType edgeType) {
+
+    return outAtMostOneE(vertex, edgeType).map(Relationship::getEndNode);
+  }
+
+  /*
+    ### *in* methods
+
+  */
+  @Override
   public Stream<Relationship> inE(Node vertex, AnyEdgeType edgeType) {
 
-    return stream( vertex.getRelationships(relType(edgeType), INCOMING) );
+    return stream( vertex.getRelationships(Neo4jRelType(edgeType), INCOMING) );
+  }
+
+  @Override
+  public Relationship inOneE(Node vertex, AnyEdgeType edgeType) {
+
+    return vertex.getSingleRelationship(Neo4jRelType(edgeType), INCOMING);
+  }
+
+  @Override
+  public Optional<Relationship> inAtMostOneE(Node vertex, AnyEdgeType edgeType) {
+
+    return Optional.ofNullable(
+      inOneE(vertex, edgeType)
+    );
   }
 
   @Override
   public Stream<Node> inV(Node vertex, AnyEdgeType edgeType) {
 
     return stream (
-      vertex.getRelationships(relType(edgeType), INCOMING)
+      vertex.getRelationships(Neo4jRelType(edgeType), INCOMING)
     ).map( Relationship::getStartNode );
+  }
+
+  @Override
+  public Node inOneV(Node vertex, AnyEdgeType edgeType) {
+
+    return inOneE(vertex, edgeType).getStartNode();
+  }
+
+  @Override
+  public Optional<Node> inAtMostOneV(Node vertex, AnyEdgeType edgeType) {
+
+    return inAtMostOneE(vertex, edgeType).map(Relationship::getStartNode);
   }
 }
