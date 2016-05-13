@@ -8,165 +8,149 @@ import com.bio4j.angulillos.*;
 import static com.bio4j.angulillos.conversions.*;
 
 // Neo4j
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Label;
-import org.neo4j.graphdb.Relationship;
-import org.neo4j.graphdb.RelationshipType;
-
+import org.neo4j.graphdb.*;
 import static org.neo4j.graphdb.Direction.*;
 
 import org.neo4j.graphdb.Transaction;
-import org.neo4j.graphdb.schema.ConstraintDefinition;
-import org.neo4j.graphdb.schema.ConstraintCreator;
+// import org.neo4j.graphdb.schema.ConstraintDefinition;
+// import org.neo4j.graphdb.schema.ConstraintCreator;
 
-public interface Neo4jUntypedGraph extends UntypedGraph <
-  // vertex and vertex type
-  org.neo4j.graphdb.Node, org.neo4j.graphdb.Label,
-  // edge and edge type
-  org.neo4j.graphdb.Relationship, org.neo4j.graphdb.RelationshipType
-> 
+
+public class Neo4jUntypedGraph
+implements
+  UntypedGraph<Node, Relationship>
 {
+  private final GraphDatabaseService neo4jGraph;
+  public  final GraphDatabaseService neo4jGraph() { return this.neo4jGraph; }
 
-  org.neo4j.graphdb.GraphDatabaseService neo4jGraph();
+  public Neo4jUntypedGraph(GraphDatabaseService neo4jGraph) { this.neo4jGraph = neo4jGraph; }
 
-  default void commit() {  }
-
-  default void shutdown() { neo4jGraph().shutdown(); }
 
   @Override
-  default Relationship addEdge(Node from, RelationshipType edgeType, Node to) {
+  public void commit() {}
 
-    try ( Transaction tx = neo4jGraph().beginTx() ) {
+  @Override
+  public void shutdown() { neo4jGraph().shutdown(); }
 
-      Relationship rel = from.createRelationshipTo(to, edgeType); 
-      tx.success(); 
+  @Override
+  public void rollback() {}
 
-      return rel;
-    }
+  private RelationshipType relType(AnyEdgeType edgeType) {
+    return DynamicRelationshipType.withName(edgeType._label());
   }
 
   @Override
-  default Node addVertex(Label type) {  
+  public Relationship addEdge(Node from, AnyEdgeType edgeType, Node to) {
 
-    try ( Transaction tx = neo4jGraph().beginTx() ) {
-
-      Node node = neo4jGraph().createNode(type); 
-      tx.success(); 
-
-      return node;
-    }
+    return from.createRelationshipTo(to, relType(edgeType));
   }
 
   @Override
-  default <V> V getPropertyV(Node vertex, String property) {  
+  public Node addVertex(AnyVertexType vertexType) {
+
+    return neo4jGraph().createNode(DynamicLabel.label(vertexType._label()));
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////
+
+  @Override
+  public <V> V getPropertyV(Node vertex, AnyProperty property) {
 
     @SuppressWarnings("unchecked")
-    V value = (V) vertex.getProperty( property ); 
+    V value = (V) vertex.getProperty(property._label());
     return value;
   }
 
   @Override
-  default <V> void setPropertyV(Node vertex, String property, V value) {
+  public <V> Node setPropertyV(Node vertex, AnyProperty property, V value) {
 
-    try ( Transaction tx = neo4jGraph().beginTx() ) {
-
-      vertex.setProperty( property, value ); 
-      tx.success(); 
-    }
+    vertex.setProperty(property._label(), value);
+    return vertex;
   }
 
   @Override
-  default <V> V getPropertyE(Relationship edge, String property) {
+  public <V> V getPropertyE(Relationship edge, AnyProperty property) {
 
     @SuppressWarnings("unchecked")
-    V value = (V) edge.getProperty( property ); 
+    V value = (V) edge.getProperty(property._label());
     return value;
   }
 
   @Override
-  default <V> void setPropertyE(Relationship edge, String property, V value) {
+  public <V> Relationship setPropertyE(Relationship edge, AnyProperty property, V value) {
 
-    try ( Transaction tx = neo4jGraph().beginTx() ) {
-
-      edge.setProperty( property, value );
-      tx.success(); 
-    }
-    
+    edge.setProperty(property._label(), value);
+    return edge;
   }
 
   @Override
-  default Node source(Relationship edge) {
+  public Node source(Relationship edge) {
 
     return edge.getStartNode();
   }
 
   @Override
-  default Node target(Relationship edge) {
+  public Node target(Relationship edge) {
 
-    return edge.getEndNode();    
+    return edge.getEndNode();
   }
 
   @Override
-  default Optional<Stream<Relationship>> out(Node vertex, RelationshipType edgeType) {
+  public Stream<Relationship> outE(Node vertex, AnyEdgeType edgeType) {
 
-    return Optional.ofNullable( stream( vertex.getRelationships( edgeType, OUTGOING ) ) );
+    return stream( vertex.getRelationships(relType(edgeType), OUTGOING) );
   }
 
   @Override
-  default Optional<Stream<Node>> outV(Node vertex, RelationshipType edgeType) {
+  public Stream<Node> outV(Node vertex, AnyEdgeType edgeType) {
 
-    return Optional.ofNullable ( 
-      stream ( 
-        vertex.getRelationships( edgeType, OUTGOING ) 
-      )
-      .map( Relationship::getEndNode ) 
-    );
+    return stream(
+      vertex.getRelationships(relType(edgeType), OUTGOING)
+    ).map( Relationship::getEndNode );
   }
 
   @Override
-  default Optional<Stream<Relationship>> in(Node vertex, RelationshipType edgeType) {
+  public Stream<Relationship> inE(Node vertex, AnyEdgeType edgeType) {
 
-    return Optional.ofNullable( stream( vertex.getRelationships( edgeType, INCOMING ) ) );
+    return stream( vertex.getRelationships(relType(edgeType), INCOMING) );
   }
 
   @Override
-  default Optional<Stream<Node>> inV(Node vertex, RelationshipType edgeType) {
+  public Stream<Node> inV(Node vertex, AnyEdgeType edgeType) {
 
-    return Optional.ofNullable ( 
-      stream ( 
-        vertex.getRelationships( edgeType, INCOMING ) 
-      )
-      .map( Relationship::getStartNode ) 
-    );
+    return stream (
+      vertex.getRelationships(relType(edgeType), INCOMING)
+    ).map( Relationship::getStartNode );
   }
 
-  default <
-    N extends TypedVertex<N,NT,G,I,Node,Label,Relationship,RelationshipType>,
-    NT extends TypedVertex.Type<N,NT,G,I,Node,Label,Relationship,RelationshipType>,
-    P extends Property<N,NT,P,V,G,I,Node,Label,Relationship,RelationshipType>, V,
-    G extends TypedGraph<G,I,Node,Label,Relationship,RelationshipType>,
-    I extends Neo4jUntypedGraph
-  > ConstraintCreator uniqueConstraintFor(P property) {
-
-    return neo4jGraph().schema().constraintFor(property.elementType().raw())
-      .assertPropertyIsUnique(property.name());
-  }
-
-  default <
-    N extends TypedVertex<N,NT,G,I,Node,Label,Relationship,RelationshipType>,
-    NT extends TypedVertex.Type<N,NT,G,I,Node,Label,Relationship,RelationshipType>,
-    P extends Property<N,NT,P,V,G,I,Node,Label,Relationship,RelationshipType>, V,
-    G extends TypedGraph<G,I,Node,Label,Relationship,RelationshipType>,
-    I extends Neo4jUntypedGraph
-  > ConstraintDefinition createOrGetUniqueConstraintFor(P property) {
-
-    return Optional.ofNullable ( 
-      neo4jGraph().schema()
-      .getConstraints( property.elementType().raw() )
-      .iterator().next()
-    ).orElseGet(
-      () -> uniqueConstraintFor(property).create()
-    );
-  }
+  // <
+  //   N extends TypedVertex<N,NT,G,I,Node,AnyVertexType,Relationship,AnyEdgeType>,
+  //   NT extends TypedVertex.Type<N,NT,G,I,Node,AnyVertexType,Relationship,AnyEdgeType>,
+  //   P extends Property<N,NT,P,V,G,I,Node,AnyVertexType,Relationship,AnyEdgeType>, V,
+  //   G extends TypedGraph<G,I,Node,AnyVertexType,Relationship,AnyEdgeType>,
+  //   I extends Neo4jUntypedGraph
+  // > ConstraintCreator uniqueConstraintFor(P property) {
+  //
+  //   return neo4jGraph().schema().constraintFor(property.elementType().raw())
+  //     .assertPropertyIsUnique(property.name());
+  // }
+  //
+  // <
+  //   N extends TypedVertex<N,NT,G,I,Node,AnyVertexType,Relationship,AnyEdgeType>,
+  //   NT extends TypedVertex.Type<N,NT,G,I,Node,AnyVertexType,Relationship,AnyEdgeType>,
+  //   P extends Property<N,NT,P,V,G,I,Node,AnyVertexType,Relationship,AnyEdgeType>, V,
+  //   G extends TypedGraph<G,I,Node,AnyVertexType,Relationship,AnyEdgeType>,
+  //   I extends Neo4jUntypedGraph
+  // > ConstraintDefinition createOrGetUniqueConstraintFor(P property) {
+  //
+  //   return Optional.ofNullable (
+  //     neo4jGraph().schema()
+  //     .getConstraints( property.elementType().raw() )
+  //     .iterator().next()
+  //   ).orElseGet(
+  //     () -> uniqueConstraintFor(property).create()
+  //   );
+  // }
 
 }
