@@ -11,11 +11,6 @@ import static com.bio4j.angulillos.conversions.*;
 import org.neo4j.graphdb.*;
 import static org.neo4j.graphdb.Direction.*;
 
-import org.neo4j.graphdb.Transaction;
-// import org.neo4j.graphdb.schema.ConstraintDefinition;
-// import org.neo4j.graphdb.schema.ConstraintCreator;
-
-
 public class Neo4jUntypedGraph
 implements
   UntypedGraph<Node, Relationship>
@@ -27,13 +22,13 @@ implements
 
 
   @Override
-  public void commit() {}
+  public void commit() { throw new UnsupportedOperationException(); }
 
   @Override
   public void shutdown() { neo4jGraph().shutdown(); }
 
   @Override
-  public void rollback() {}
+  public void rollback() { throw new UnsupportedOperationException(); }
 
   private RelationshipType relType(AnyEdgeType edgeType) {
     return DynamicRelationshipType.withName(edgeType._label());
@@ -123,34 +118,4 @@ implements
       vertex.getRelationships(relType(edgeType), INCOMING)
     ).map( Relationship::getStartNode );
   }
-
-  // <
-  //   N extends TypedVertex<N,NT,G,I,Node,AnyVertexType,Relationship,AnyEdgeType>,
-  //   NT extends TypedVertex.Type<N,NT,G,I,Node,AnyVertexType,Relationship,AnyEdgeType>,
-  //   P extends Property<N,NT,P,V,G,I,Node,AnyVertexType,Relationship,AnyEdgeType>, V,
-  //   G extends TypedGraph<G,I,Node,AnyVertexType,Relationship,AnyEdgeType>,
-  //   I extends Neo4jUntypedGraph
-  // > ConstraintCreator uniqueConstraintFor(P property) {
-  //
-  //   return neo4jGraph().schema().constraintFor(property.elementType().raw())
-  //     .assertPropertyIsUnique(property.name());
-  // }
-  //
-  // <
-  //   N extends TypedVertex<N,NT,G,I,Node,AnyVertexType,Relationship,AnyEdgeType>,
-  //   NT extends TypedVertex.Type<N,NT,G,I,Node,AnyVertexType,Relationship,AnyEdgeType>,
-  //   P extends Property<N,NT,P,V,G,I,Node,AnyVertexType,Relationship,AnyEdgeType>, V,
-  //   G extends TypedGraph<G,I,Node,AnyVertexType,Relationship,AnyEdgeType>,
-  //   I extends Neo4jUntypedGraph
-  // > ConstraintDefinition createOrGetUniqueConstraintFor(P property) {
-  //
-  //   return Optional.ofNullable (
-  //     neo4jGraph().schema()
-  //     .getConstraints( property.elementType().raw() )
-  //     .iterator().next()
-  //   ).orElseGet(
-  //     () -> uniqueConstraintFor(property).create()
-  //   );
-  // }
-
 }
