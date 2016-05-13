@@ -10,8 +10,9 @@ bucketSuffix := "era7.com"
 
 javaVersion := "1.8"
 
-libraryDependencies += "org.neo4j" % "neo4j" % "2.1.5"
+libraryDependencies ++= Seq(
+  "org.neo4j" % "neo4j"      % "2.3.3",
+  "bio4j"     % "angulillos" % "0.7.0"
+)
 
-libraryDependencies += "bio4j" % "angulillos" % "0.4.1"
-
-dependencyOverrides += "net.sf.opencsv" % "opencsv" % "2.3"
+// dependencyOverrides += "net.sf.opencsv" % "opencsv" % "2.3"
