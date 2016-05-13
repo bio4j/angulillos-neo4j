@@ -11,7 +11,7 @@ import static com.bio4j.angulillos.conversions.*;
 import org.neo4j.graphdb.*;
 import static org.neo4j.graphdb.Direction.*;
 
-public class Neo4jUntypedGraph
+public final class Neo4jUntypedGraph
 implements
   UntypedGraph<Node, Relationship>
 {
@@ -23,6 +23,8 @@ implements
   // TODO drop all these methods after fixing inheritance in angulillos
   @Override
   public void commit() { throw new UnsupportedOperationException(); }
+
+  public void beginTx() { neo4jGraph.beginTx(); }
 
   @Override
   public void shutdown() { neo4jGraph().shutdown(); }
