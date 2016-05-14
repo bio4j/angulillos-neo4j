@@ -13,24 +13,35 @@ import static org.neo4j.graphdb.Direction.*;
 
 public final class Neo4jUntypedGraph
 implements
-  UntypedGraph<Node, Relationship>
+  UntypedGraph.Transactional<Node, Relationship>
 {
   private final GraphDatabaseService neo4jGraph;
   public  final GraphDatabaseService neo4jGraph() { return this.neo4jGraph; }
 
   public Neo4jUntypedGraph(GraphDatabaseService neo4jGraph) { this.neo4jGraph = neo4jGraph; }
 
-  // TODO drop all these methods after fixing inheritance in angulillos
-  @Override
-  public void commit() { throw new UnsupportedOperationException(); }
+  public final class Tx implements UntypedGraph.Transaction<Node, Relationship> {
 
-  public void beginTx() { neo4jGraph.beginTx(); }
+    private final org.neo4j.graphdb.Transaction tx;
+    public Tx(org.neo4j.graphdb.Transaction tx) { this.tx = tx; }
+
+    @Override
+    public final Neo4jUntypedGraph graph() { return Neo4jUntypedGraph.this; }
+
+    @Override
+    public final void commit() { tx.close(); }
+
+    @Override
+    public final void rollback() { tx.terminate(); }
+
+    public final void success() { tx.success(); }
+  }
 
   @Override
-  public void shutdown() { neo4jGraph().shutdown(); }
+  public final Tx beginTx() { return new Tx( neo4jGraph.beginTx() ); }
 
   @Override
-  public void rollback() { throw new UnsupportedOperationException(); }
+  public final void shutdown() { neo4jGraph().shutdown(); }
 
   /* Convert an `AnyEdgeType` to Neo4j RelationshipType */
   private static RelationshipType Neo4jRelType(AnyEdgeType edgeType) {
