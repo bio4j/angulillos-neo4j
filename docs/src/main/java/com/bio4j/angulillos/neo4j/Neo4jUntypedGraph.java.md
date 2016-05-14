@@ -1,3 +1,5 @@
+
+```java
 package com.bio4j.angulillos.neo4j;
 
 import java.util.stream.Stream;
@@ -10,29 +12,32 @@ import static com.bio4j.angulillos.conversions.*;
 // Neo4j
 import org.neo4j.graphdb.*;
 import static org.neo4j.graphdb.Direction.*;
+```
 
-/*
-  ## Neo4j untyped graph implementation
 
-  ### Normal use
+## Neo4j untyped graph implementation
 
-  You would
+### Normal use
 
-  1. open a transaction `tx = g.beginTx()`
-  2. do stuff
-  3. if everything looks OK, `tx.success()`
-  4. at last commit `tx.commit()`
+You would
 
-  The proper style for this would be
+1. open a transaction `tx = g.beginTx()`
+2. do stuff
+3. if everything looks OK, `tx.success()`
+4. at last commit `tx.commit()`
 
-  ``` java
-  try( tx = g.beginTx() ) {
+The proper style for this would be
 
-    // create nodes, whatever
-    tx.success();
-  }
-  ```
-*/
+``` java
+try( tx = g.beginTx() ) {
+
+  // create nodes, whatever
+  tx.success();
+}
+```
+
+
+```java
 public final class Neo4jUntypedGraph
 implements
   UntypedGraph.Transactional<Node, Relationship>
@@ -49,16 +54,25 @@ implements
 
     @Override
     public final Neo4jUntypedGraph graph() { return Neo4jUntypedGraph.this; }
+```
 
-    /* Commit here will either properly try to commit the transaction if it has *only* been marked by `success()`, or `rollback()` it in any other case. */
+Commit here will either properly try to commit the transaction if it has *only* been marked by `success()`, or `rollback()` it in any other case.
+
+```java
     @Override
     public final void commit() { tx.close(); }
+```
 
-    /* This method will inconditionally rollback the wrapped transaction. */
+This method will inconditionally rollback the wrapped transaction.
+
+```java
     @Override
     public final void rollback() { tx.terminate(); }
+```
 
-    /* Note that for a transaction to be actually committed you need to call `success()` on it before. */
+Note that for a transaction to be actually committed you need to call `success()` on it before.
+
+```java
     public final void success() { tx.success(); }
 
     @Override
@@ -70,8 +84,11 @@ implements
 
   @Override
   public final void shutdown() { neo4jGraph().shutdown(); }
+```
 
-  /* Convert an `AnyEdgeType` to Neo4j RelationshipType */
+Convert an `AnyEdgeType` to Neo4j RelationshipType
+
+```java
   private static RelationshipType Neo4jRelType(AnyEdgeType edgeType) {
 
     return DynamicRelationshipType.withName(edgeType._label());
@@ -138,12 +155,14 @@ implements
 
     return edge.getEndNode();
   }
+```
 
-  /*
-    ### *out* methods
 
-  */
+### *out* methods
 
+
+
+```java
   @Override
   public Stream<Relationship> outE(Node vertex, AnyEdgeType edgeType) {
 
@@ -183,11 +202,14 @@ implements
 
     return outAtMostOneE(vertex, edgeType).map(Relationship::getEndNode);
   }
+```
 
-  /*
-    ### *in* methods
 
-  */
+### *in* methods
+
+
+
+```java
   @Override
   public Stream<Relationship> inE(Node vertex, AnyEdgeType edgeType) {
 
@@ -228,3 +250,10 @@ implements
     return inAtMostOneE(vertex, edgeType).map(Relationship::getStartNode);
   }
 }
+
+```
+
+
+
+
+[main/java/com/bio4j/angulillos/neo4j/Neo4jUntypedGraph.java]: Neo4jUntypedGraph.java.md

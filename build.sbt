@@ -8,7 +8,7 @@ description   := "Use Neo4j with the angulillos API"
 
 libraryDependencies ++= Seq(
   "org.neo4j" % "neo4j"      % "2.3.3",
-  "bio4j"     % "angulillos" % "0.7.0"
+  "bio4j"     % "angulillos" % "0.7.1"
 )
 
 bucketSuffix := "era7.com"
