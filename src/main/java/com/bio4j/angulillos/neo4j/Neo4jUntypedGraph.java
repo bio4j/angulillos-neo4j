@@ -11,6 +11,28 @@ import static com.bio4j.angulillos.conversions.*;
 import org.neo4j.graphdb.*;
 import static org.neo4j.graphdb.Direction.*;
 
+/*
+  ## Neo4j untyped graph implementation
+
+  ### Normal use
+
+  You would
+
+  1. open a transaction `tx = g.beginTx()`
+  2. do stuff
+  3. if everything looks OK, `tx.success()`
+  4. at last commit `tx.commit()`
+
+  The proper style for this would be
+
+  ``` java
+  try( tx = g.beginTx() ) {
+
+    // create nodes, whatever
+    tx.success();
+  }
+  ```
+*/
 public final class Neo4jUntypedGraph
 implements
   UntypedGraph.Transactional<Node, Relationship>
@@ -20,7 +42,7 @@ implements
 
   public Neo4jUntypedGraph(GraphDatabaseService neo4jGraph) { this.neo4jGraph = neo4jGraph; }
 
-  public final class Tx implements UntypedGraph.Transaction<Node, Relationship> {
+  public final class Tx implements AutoCloseable, UntypedGraph.Transaction<Node, Relationship> {
 
     private final org.neo4j.graphdb.Transaction tx;
     public Tx(org.neo4j.graphdb.Transaction tx) { this.tx = tx; }
@@ -28,13 +50,19 @@ implements
     @Override
     public final Neo4jUntypedGraph graph() { return Neo4jUntypedGraph.this; }
 
+    /* Commit here will either properly try to commit the transaction if it has *only* been marked by `success()`, or `rollback()` it in any other case. */
     @Override
     public final void commit() { tx.close(); }
 
+    /* This method will inconditionally rollback the wrapped transaction. */
     @Override
     public final void rollback() { tx.terminate(); }
 
+    /* Note that for a transaction to be actually committed you need to call `success()` on it before. */
     public final void success() { tx.success(); }
+
+    @Override
+    public final void close() { commit(); }
   }
 
   @Override
