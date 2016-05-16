@@ -47,40 +47,8 @@ implements
 
   public Neo4jUntypedGraph(GraphDatabaseService neo4jGraph) { this.neo4jGraph = neo4jGraph; }
 
-  public final class Tx implements AutoCloseable, UntypedGraph.Transaction<Node, Relationship> {
-
-    private final org.neo4j.graphdb.Transaction tx;
-    public Tx(org.neo4j.graphdb.Transaction tx) { this.tx = tx; }
-
-    @Override
-    public final Neo4jUntypedGraph graph() { return Neo4jUntypedGraph.this; }
-```
-
-Commit here will either properly try to commit the transaction if it has *only* been marked by `success()`, or `rollback()` it in any other case.
-
-```java
-    @Override
-    public final void commit() { tx.close(); }
-```
-
-This method will inconditionally rollback the wrapped transaction.
-
-```java
-    @Override
-    public final void rollback() { tx.terminate(); }
-```
-
-Note that for a transaction to be actually committed you need to call `success()` on it before.
-
-```java
-    public final void success() { tx.success(); }
-
-    @Override
-    public final void close() { commit(); }
-  }
-
   @Override
-  public final Tx beginTx() { return new Tx( neo4jGraph.beginTx() ); }
+  public final Tx beginTx() { return new Tx( neo4jGraph.beginTx(), this ); }
 
   @Override
   public final void shutdown() { neo4jGraph().shutdown(); }
@@ -257,3 +225,4 @@ Convert an `AnyEdgeType` to Neo4j RelationshipType
 
 
 [main/java/com/bio4j/angulillos/neo4j/Neo4jUntypedGraph.java]: Neo4jUntypedGraph.java.md
+[main/java/com/bio4j/angulillos/neo4j/Tx.java]: Tx.java.md
