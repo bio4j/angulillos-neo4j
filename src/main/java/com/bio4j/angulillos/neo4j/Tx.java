@@ -30,4 +30,14 @@ public final class Tx implements AutoCloseable, UntypedGraph.Transaction<Node, R
 
   @Override
   public final void close() { commit(); }
+
+  public final void lockWrites(PropertyContainer entity) {
+
+    tx.acquireWriteLock(entity);
+  }
+
+  public final void lockReads(PropertyContainer entity) {
+
+    tx.acquireReadLock(entity);
+  }
 }
