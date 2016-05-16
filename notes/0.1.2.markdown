@@ -1,0 +1,4 @@
+This release adds improvements on the transaction API #8:
+
+- make Tx a static class
+- expose Neo4j tx lock methods
